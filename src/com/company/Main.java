@@ -1,7 +1,6 @@
 package com.company;
 
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -9,37 +8,43 @@ public class Main {
         budgetManager.menu();
     }
 
-    static class BudgetManager {
-        protected final Scanner scanner = new Scanner(System.in);
-        ArrayList<String> purchasesList = new ArrayList<>();
-        double total = 0.00;
-        double sum = 0.00;
+    public static class BudgetManager {
+        private Double balance = 0.00;
+        private Double foodSum = 0.00;
+        private Double clothesSum = 0.00;
+        private Double entertainmentSum = 0.00;
+        private Double otherSum = 0.00;
+        private Double totalSum = 0.00;
 
-        public BudgetManager() {
-            
+        final private Scanner scanner = new Scanner(System.in);
+        HashMap<Category, ArrayList<Purchase>> categoryPurchaseMap = new HashMap<>();
+
+        BudgetManager() {
+
         }
 
-        private void menu() {
+        public void menu() {
+
             do {
                 menuCommands();
                 String action = scanner.next();
                 if (action.equals("1")) {
-                    addIncome();
+                    this.addIncome();
                 } else if (action.equals("2")) {
-                    addPurchase();
+                    this.addPurchase();
                 } else if (action.equals("3")) {
-                    showList();
+                    this.showListOfPurchase();
                 } else if (action.equals("4")) {
-                    balance();
+                    this.showBalance();
                 } else if (action.equals("0")) {
                     System.out.println();
                     System.out.println("Bye!");
-                    break;
+                    System.exit(0);
                 }
             } while (true);
         }
 
-        private static void menuCommands() {
+        public void menuCommands() {
             System.out.println("1) Add income");
             System.out.println("2) Add purchase");
             System.out.println("3) Show list of purchases");
@@ -48,42 +53,221 @@ public class Main {
             System.out.println();
         }
 
-        private double addIncome() {
-            System.out.println("Enter income:");
-            double income = scanner.nextDouble();
-            System.out.println("Income was added!");
-            System.out.println();
-            return total = total + income;
-        }
-
-        private double addPurchase() {
+        private void addIncome() {
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter purchase name:");
-            String productName = scanner.nextLine();
-            System.out.println("Enter its price:");
-            String productPrice = scanner.nextLine();
-            System.out.println("Purchase was added!\n");
-            purchasesList.add(productName + " $" + productPrice);
-            return sum = sum + Double.parseDouble(productPrice);
+            System.out.println("Enter income:");
+            Double addition = Double.parseDouble(scanner.nextLine());
+            balance += addition;
+            System.out.println("Income was added!");
         }
 
-        private void showList() {
-            if (purchasesList.size() == 0) {
-                System.out.println("The purchase list is empty\n");
-            } else {
-                for (int i = 0; i < purchasesList.size(); i++) {
-                    System.out.println(purchasesList.get(i));
+        private void addPurchase() {
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("1) Food");
+            System.out.println("2) Clothes");
+            System.out.println("3) Entertainment");
+            System.out.println("4) Other");
+            System.out.println("0) Back");
+            System.out.println();
+
+            String action = scanner.nextLine();
+            boolean purchaseContinue = true;
+
+            do {
+                if (action.equals("1") || action.equals("2") ||
+                        action.equals("3") || action.equals("4")) {
+                    purchaseContinue = false;
+                } else if (action.equals("0")) {
+                    System.out.println();
+                    this.menu();
+                } else {
+                    System.out.println("Wrong number of answer!");
+                    this.menu();
                 }
-                System.out.println(String.format("Total sum: $%.2f\n", sum));
+            } while (purchaseContinue);
+
+            Category categoryOfPurchase = Category.returnNewCategory(action);
+
+            System.out.println("Enter purchase name:");
+            String nameOfPurchase = scanner.nextLine();
+            System.out.println("Enter its price:");
+            Double priceOfPurchase = Double.parseDouble(scanner.nextLine());
+            String priceInString = String.format("%.2f", priceOfPurchase);
+            balance -= priceOfPurchase;
+            totalSum += priceOfPurchase;
+
+            if (action.equals("1")) {
+                foodSum += priceOfPurchase;
+            } else if (action.equals("2")) {
+                clothesSum += priceOfPurchase;
+            } else if (action.equals("3")) {
+                entertainmentSum += priceOfPurchase;
+            } else if (action.equals("4")) {
+                otherSum += priceOfPurchase;
             }
+
+            Purchase thisPurchase = new Purchase(categoryOfPurchase, nameOfPurchase, priceInString);
+
+            if (!categoryPurchaseMap.containsKey(categoryOfPurchase)) {
+                ArrayList<Purchase> purchases = new ArrayList<>();
+                purchases.add(thisPurchase);
+                categoryPurchaseMap.put(categoryOfPurchase, purchases);
+            } else {
+                categoryPurchaseMap.get(categoryOfPurchase).add(thisPurchase);
+            }
+
+            System.out.println("Purchase was added!");
+            System.out.println();
+            this.addPurchase();
         }
 
-        private void balance() {
-            if (total - sum > 0) {
-                System.out.println(String.format("Balance: $%.2f\n", total - sum));
-            } else {
-                System.out.println(String.format("Balance: $%.2f\n", total));
+        private void showListOfPurchase() {
+            Scanner scanner = new Scanner(System.in);
+            System.out.println();
+            boolean showListContinue = true;
+            if (categoryPurchaseMap.isEmpty()) {
+                System.out.println("Purchase list is empty!");
+                System.out.println();
+                return;
             }
+
+            do {
+                System.out.println("Choose the type of purchases\n" +
+                        "1) Food\n" +
+                        "2) Clothes\n" +
+                        "3) Entertainment\n" +
+                        "4) Other\n" +
+                        "5) All\n" +
+                        "6) Back");
+
+                String answer = scanner.nextLine();
+                if (answer.equals("1")) {
+                    if (!categoryPurchaseMap.containsKey(Category.FOOD)) {
+                        System.out.println("Purchase list is empty!");
+                        this.showListOfPurchase();
+                    }
+                    System.out.println("\nFood:");
+                    for (Purchase purchase : categoryPurchaseMap.get(Category.FOOD)) {
+                        System.out.println(purchase);
+                    }
+                    String foodSumInString = String.format("Total sum: $%.2f", foodSum);
+                    System.out.println(foodSumInString);
+                    this.showListOfPurchase();
+                } else if (answer.equals("2")) {
+                    if (!categoryPurchaseMap.containsKey(Category.CLOTHES)) {
+                        System.out.println("Purchase list is empty!");
+                        this.showListOfPurchase();
+                    }
+                    System.out.println("\nClothes:");
+                    for (Purchase purchase : categoryPurchaseMap.get(Category.CLOTHES)) {
+                        System.out.println(purchase);
+                    }
+                    String clothesSumInString = String.format("Total sum: $%.2f", clothesSum);
+                    System.out.println("Total sum: $" + clothesSumInString);
+                    this.showListOfPurchase();
+                } else if (answer.equals("3")) {
+                    if (!categoryPurchaseMap.containsKey(Category.ENTERTAINMENT)) {
+                        System.out.println("Purchase list is empty!");
+                        this.showListOfPurchase();
+                    }
+                    System.out.println("\nEntertainment:");
+                    for (Purchase purchase : categoryPurchaseMap.get(Category.ENTERTAINMENT)) {
+                        System.out.println(purchase);
+                    }
+                    String entertainmentSumInString = String.format("Total sum: $%.2f", entertainmentSum);
+                    System.out.println(entertainmentSumInString);
+                    this.showListOfPurchase();
+                } else if (answer.equals("4")) {
+                    if (!categoryPurchaseMap.containsKey(Category.OTHER)) {
+                        System.out.println("Purchase list is empty!");
+                        this.showListOfPurchase();
+                    }
+                    System.out.println("\nOther");
+                    for (Purchase purchase : categoryPurchaseMap.get(Category.OTHER)) {
+                        System.out.println(purchase);
+                    }
+                    String otherSumInString = String.format("Total sum: $%.2f", otherSum);
+                    System.out.println("Total sum: $" + otherSumInString);
+                    this.showListOfPurchase();
+                } else if (answer.equals("5")) {
+                    System.out.println("\nAll:");
+                    for (ArrayList<Purchase> listOfAllPurchases : categoryPurchaseMap.values()) {
+                        for (Purchase purchase : listOfAllPurchases) {
+                            System.out.println(purchase);
+                        }
+                    }
+                    String totalSumInString = String.format("Total sum: $%.2f", totalSum);
+                    System.out.println("Total sum: $" + totalSumInString);
+                    this.showListOfPurchase();
+                } else if (answer.equals("6")) {
+                    System.out.println();
+                    this.menu();
+                }
+            } while (showListContinue);
+        }
+
+        private void showBalance() {
+            String balanceInString = String.format("Balance: $%.2f", balance);
+            System.out.println(balanceInString);
+            System.out.println();
+
         }
     }
+
+    public static class Purchase {
+        private Category category;
+        private String name;
+        private String price;
+
+        public Purchase(Category category, String name, String price) {
+            this.category = category;
+            this.name = name;
+            this.price = price;
+        }
+
+        @Override
+        public String toString() {
+            return name + " $" + price;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPrice() {
+            return price;
+        }
+    }
+
+    public enum Category {
+        FOOD(1, "Food"),
+        CLOTHES(2, "Clothes"),
+        ENTERTAINMENT(3, "Entertainment"),
+        OTHER(4, "Other");
+
+        private int id;
+        private String name;
+
+        Category(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        @Override
+        public String toString() {
+            return name + ":";
+        }
+
+        static public Category returnNewCategory(String id) {
+            if (id.equals("1")) return Category.FOOD;
+            if (id.equals("2")) return Category.CLOTHES;
+            if (id.equals("3")) return Category.ENTERTAINMENT;
+            else return Category.OTHER;
+        }
+    }
+
 }
