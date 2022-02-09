@@ -1,5 +1,9 @@
 package com.company;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class Main {
@@ -36,6 +40,10 @@ public class Main {
                     this.showListOfPurchase();
                 } else if (action.equals("4")) {
                     this.showBalance();
+                } else if (action.equals("5")) {
+                    this.saveToFile();
+                } else if (action.equals("6")) {
+                    this.loadPurchasesFromFile();
                 } else if (action.equals("0")) {
                     System.out.println();
                     System.out.println("Bye!");
@@ -49,6 +57,8 @@ public class Main {
             System.out.println("2) Add purchase");
             System.out.println("3) Show list of purchases");
             System.out.println("4) Balance");
+            System.out.println("5) Save");
+            System.out.println("6) Load");
             System.out.println("0) Exit");
             System.out.println();
         }
@@ -67,7 +77,7 @@ public class Main {
             System.out.println("2) Clothes");
             System.out.println("3) Entertainment");
             System.out.println("4) Other");
-            System.out.println("0) Back");
+            System.out.println("5) Back");
             System.out.println();
 
             String action = scanner.nextLine();
@@ -77,7 +87,7 @@ public class Main {
                 if (action.equals("1") || action.equals("2") ||
                         action.equals("3") || action.equals("4")) {
                     purchaseContinue = false;
-                } else if (action.equals("0")) {
+                } else if (action.equals("5")) {
                     System.out.println();
                     this.menu();
                 } else {
@@ -196,7 +206,7 @@ public class Main {
                             System.out.println(purchase);
                         }
                     }
-                    String totalSumInString = String.format("Total sum: $%.2f", totalSum);
+                    String totalSumInString = String.format("%.2f", totalSum);
                     System.out.println("Total sum: $" + totalSumInString);
                     this.showListOfPurchase();
                 } else if (answer.equals("6")) {
@@ -211,6 +221,73 @@ public class Main {
             System.out.println(balanceInString);
             System.out.println();
 
+        }
+
+        private void saveToFile() {
+            try (FileWriter writer = new FileWriter("purchases.txt")) {
+                writer.write(String.valueOf(balance) + "\n");
+                writer.write(String.valueOf(totalSum) + "\n");
+                writer.write(String.valueOf(foodSum) + "\n");
+                writer.write(String.valueOf(clothesSum) + "\n");
+                writer.write(String.valueOf(entertainmentSum) + "\n");
+                writer.write(String.valueOf(otherSum) + "\n");
+
+                for (Category category : categoryPurchaseMap.keySet()) {
+                    for (Purchase purchase : categoryPurchaseMap.get(category)) {
+                        writer.write(category.getId() + "\n");
+                        writer.write(purchase.getName() + "\n");
+                        writer.write(String.valueOf(purchase.getPrice()) + "\n");
+                    }
+                }
+                System.out.println("Purchases were saved!");
+                System.out.println();
+
+            } catch (IOException e) {
+                System.out.printf("An exception occurs %s", e.getMessage());
+            }
+
+        }
+
+        private void loadPurchasesFromFile() {
+            File file = new File("purchases.txt");
+
+            try (Scanner scanner = new Scanner(file)) {
+                balance = Double.parseDouble(scanner.nextLine());
+                totalSum = Double.parseDouble(scanner.nextLine());
+                foodSum = Double.parseDouble(scanner.nextLine());
+                clothesSum = Double.parseDouble(scanner.nextLine());
+                entertainmentSum = Double.parseDouble(scanner.nextLine());
+                otherSum = Double.parseDouble(scanner.nextLine());
+
+                while (scanner.hasNext()) {
+                    String categoryId = scanner.nextLine();
+                    Category categoryOfPurchase = Category.returnNewCategory(categoryId);
+
+                    String purchaseName = scanner.nextLine();
+
+                    String costInString = scanner.nextLine();
+                    costInString = costInString.replaceAll(",", ".");
+                    Double purchaseCost = Double.parseDouble(costInString);
+
+
+                    Purchase thisPurchase = new Purchase(categoryOfPurchase, purchaseName, costInString);
+
+
+                    if (!categoryPurchaseMap.containsKey(categoryOfPurchase)) {
+                        ArrayList<Purchase> purchases = new ArrayList<>();
+                        purchases.add(thisPurchase);
+                        categoryPurchaseMap.put(categoryOfPurchase, purchases);
+                    } else {
+                        categoryPurchaseMap.get(categoryOfPurchase).add(thisPurchase);
+                    }
+
+                }
+                System.out.println("Purchases were loaded!");
+                System.out.println();
+
+            } catch (FileNotFoundException e) {
+                System.out.println("File not found: " + "purchases.txt");
+            }
         }
     }
 
