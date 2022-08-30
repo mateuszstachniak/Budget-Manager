@@ -1,5 +1,10 @@
 # Budget Manager
 
+## Starting up
+
+Program works in command line.
+Made in Java 17.
+
 ## Assumption
 
 **Project finished!**
